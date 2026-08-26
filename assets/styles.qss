@@ -1,0 +1,180 @@
+/* ===================================================================
+   CHASIS PRINCIPAL Y FUENTES
+   =================================================================== */
+QWidget {
+    background-color: #121814;
+    color: #c9d1c8;
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+}
+
+/* ===================================================================
+   ETIQUETAS DE TEXTO Y PANTALLAS EMBEBIDAS
+   =================================================================== */
+QLabel#TrackInfoLabel {
+    color: #84cc16;
+    font-weight: bold;
+    background-color: #080c09;
+    /* Efecto pantalla hundida con doble marco */
+    border-top: 1px solid #030504;
+    border-left: 1px solid #030504;
+    border-right: 1px solid #1b261f;
+    border-bottom: 1px solid #1b261f;
+    padding: 5px 10px;
+    border-radius: 4px;
+}
+
+/* ===================================================================
+   BOTONES / TECLAS DE HARDWARE (Relieve 3D Pronunciado)
+   =================================================================== */
+QPushButton {
+    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #1e2921, stop:1 #111814);
+    /* Marco exterior de metal oscuro y bisel superior de luz */
+    border: 1px solid #060907;
+    border-top: 1px solid #3b5240; 
+    border-radius: 5px;
+    color: #e2e8f0;
+    font-weight: bold;
+    padding: 6px 12px 6px 12px;
+}
+
+QPushButton:hover {
+    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #25362a, stop:1 #151f1a);
+    color: #84cc16;
+    border-top: 1px solid #4a6650;
+}
+
+QPushButton:pressed {
+    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #0a0e0b, stop:1 #101613);
+    /* Inversión del bisel para simular que la tecla baja */
+    border: 1px solid #060907;
+    border-top: 1px solid #060907;
+    border-bottom: 1px solid #3b5240;
+    padding-top: 8px;    /* Desplazamiento mecánico real hacia abajo */
+    padding-bottom: 4px;
+}
+
+/* Botón de reproducción bloqueado/hundido cuando está activo */
+QPushButton[playing="true"] {
+    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #0a0e0b, stop:1 #101613);
+    border: 1px solid #060907;
+    border-top: 1px solid #060907;
+    border-bottom: 1px solid #3b5240;
+    padding-top: 8px;    /* Simula la tecla física hundida */
+    padding-bottom: 4px;
+    color: #84cc16;      /* Verde neón para indicar estado activo */
+}
+
+/* ===================================================================
+   RACK DE AUDIO / LISTA DE REPRODUCCIÓN (QTreeWidget)
+   =================================================================== */
+QTreeWidget {
+    background-color: #080c09;
+    alternate-background-color: #0c120e;
+    border-top: 1px solid #030504;
+    border-left: 1px solid #030504;
+    border-right: 1px solid #1b261f;
+    border-bottom: 1px solid #1b261f;
+    outline: none;
+    border-radius: 4px;
+}
+
+QTreeWidget::item {
+    padding: 3px 6px;
+    border-bottom: 1px solid #121915;
+    color: #8a998e;
+}
+
+QTreeWidget::item:selected {
+    background-color: #17241b;
+    color: #84cc16;
+    font-weight: bold;
+}
+
+QHeaderView::section {
+    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #1a241e, stop:1 #0e1411);
+    color: #84cc16;
+    padding: 3px 5px;
+    border: none;
+    border-right: 1px solid #060907;
+    border-bottom: 1px solid #060907;
+    font-weight: bold;
+}
+
+/* ===================================================================
+   SLIDER DE VOLUMEN (Deslizador de consola integrado)
+   =================================================================== */
+QSlider::groove:horizontal {
+    height: 6px;
+    background: #060907;
+    border-top: 1px solid #030504;
+    border-bottom: 1px solid #1b261f;
+    border-radius: 3px;
+}
+
+QSlider::sub-page:horizontal {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #578a0e, stop:1 #84cc16);
+    border-radius: 2px;
+}
+
+QSlider::handle:horizontal {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #3c5443, stop:1 #17211b);
+    border: 1px solid #060907;
+    border-top: 1px solid #638f4d; /* Brillo superior del pomo metálico */
+    width: 14px;
+    margin-top: -5px;
+    margin-bottom: -5px;
+    border-radius: 7px;
+}
+
+QSlider::handle:horizontal:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #4c6d55, stop:1 #1e2b23);
+    border-top: 1px solid #84cc16;
+}
+
+/* ===================================================================
+   MENÚ CONTEXTUAL ESQUEUOMÓRFICO
+   =================================================================== */
+QMenu {
+    background-color: #0b0f0c;
+    color: #e2e8f0;
+    border: 1px solid #1f2c22;
+    padding: 4px;
+    border-radius: 5px;
+}
+
+QMenu::item {
+    padding: 6px 16px;
+    border-radius: 3px;
+}
+
+QMenu::item:selected {
+    background-color: #17241b;
+    color: #84cc16;
+}
+
+/* ===================================================================
+   CAMPO DE BÚSQUEDA RÁPIDA (Pantalla de texto integrada)
+   =================================================================== */
+QLineEdit#SearchInput {
+    background-color: #080c09;
+    color: #84cc16;
+    border-top: 1px solid #030504;
+    border-left: 1px solid #030504;
+    border-right: 1px solid #1b261f;
+    border-bottom: 1px solid #1b261f;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 11px;
+    selection-background-color: #17241b;
+    selection-color: #84cc16;
+}
+
+QLineEdit#SearchInput:focus {
+    border: 1px solid #3b5240;
+    border-top: 1px solid #121814;
+}
+
+QLineEdit#SearchInput::placeholder {
+    color: #4a5e4f;
+}
