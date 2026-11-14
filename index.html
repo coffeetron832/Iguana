@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iguana - Reproductor de Música</title>
+    <meta name="description" content="Iguana: reproductor de música ultraligero para escritorio, con diseño flotante, navegación por scroll y ecualizador gráfico.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #080a0f;
+            --card-bg: #0d1117;
+            --border-color: #1f2937;
+            --accent-color: #84cc16;
+            --accent-hover: #65a30d;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent-soft: rgba(132, 204, 22, 0.1);
+            --accent-line: rgba(132, 204, 22, 0.25);
+            --mx: 50%;
+            --my: -10%;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image:
+                linear-gradient(rgba(31, 41, 55, 0.35) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(31, 41, 55, 0.35) 1px, transparent 1px);
+            background-size: 48px 48px;
+            background-position: center top;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(
+                ellipse 60% 50% at var(--mx) var(--my),
+                rgba(132, 204, 22, 0.14),
+                transparent 70%
+            );
+            pointer-events: none;
+            z-index: 0;
+            transition: background 0.2s ease-out;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 1040px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        /* ---------- Splash ---------- */
+        #splash-screen {
+            position: fixed;
+            inset: 0;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.6s ease, visibility 0.6s ease;
+        }
+
+        #splash-screen h1 {
+            font-family: 'Silkscreen', sans-serif;
+            font-weight: 400;
+            font-size: clamp(2.2rem, 6vw, 3.5rem);
+            color: var(--accent-color);
+            letter-spacing: 3px;
+            animation: pulse-logo 1.2s infinite alternate;
+        }
+
+        @keyframes pulse-logo {
+            0% { opacity: 0.6; transform: scale(0.97); }
+            100% { opacity: 1; transform: scale(1.03); }
+        }
+
+        .fade-out { opacity: 0; visibility: hidden; }
+
+        /* ---------- Header ---------- */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: rgba(8, 10, 15, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-main);
+            text-decoration: none;
+        }
+
+        .brand img {
+            width: 26px;
+            height: 26px;
+            object-fit: contain;
+            border-radius: 4px;
+        }
+
+        .brand span {
+            font-family: 'Silkscreen', sans-serif;
+            font-size: 1rem;
+            letter-spacing: 2px;
+            color: var(--accent-color);
+        }
+
+        /* ---------- Buttons ---------- */
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background-color: var(--accent-color);
+            color: #000;
+            font-weight: bold;
+            font-size: 0.9rem;
+            padding: 0.7rem 1.3rem;
+            border-radius: 6px;
+            text-decoration: none;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 4px 14px rgba(132, 204, 22, 0.15);
+            transition: background-color 0.15s ease, transform 0.1s ease;
+        }
+
+        .btn-primary:hover { background-color: var(--accent-hover); }
+        .btn-primary:active { transform: translateY(1px); }
+
+        .btn-ghost {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            font-size: 0.9rem;
+            padding: 0.7rem 1.3rem;
+            border-radius: 6px;
+            text-decoration: none;
+            transition: border-color 0.15s ease, color 0.15s ease;
+        }
+
+        .btn-ghost:hover {
+            border-color: var(--accent-line);
+            color: var(--accent-color);
+        }
+
+        /* ---------- Hero ---------- */
+        .hero {
+            padding: 5rem 0 3rem;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: clamp(2rem, 4.5vw, 3rem);
+            font-weight: bold;
+            letter-spacing: -0.02em;
+            line-height: 1.15;
+            margin-bottom: 1rem;
+        }
+
+        .hero h1 span { color: var(--accent-color); }
+
+        .hero p.lead {
+            font-size: 1rem;
+            color: var(--text-muted);
+            max-width: 560px;
+            margin: 0 auto 2.5rem;
+        }
+
+        .hero-meta {
+            margin-top: 1.5rem;
+            display: flex;
+            gap: 1.25rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .hero-meta span::before {
+            content: "✓ ";
+            color: var(--accent-color);
+        }
+
+        /* ---------- Reproductor real (barra) ---------- */
+        .player-wrap {
+            position: relative;
+            margin: 0 auto;
+            max-width: 900px;
+        }
+
+        .player-wrap::before {
+            content: "";
+            position: absolute;
+            inset: -24px;
+            background: radial-gradient(ellipse, rgba(132, 204, 22, 0.18), transparent 70%);
+            z-index: -1;
+            filter: blur(12px);
+        }
+
+        .bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            height: 56px;
+            padding: 0 12px;
+            background: #0b0f14;
+            border: 1px solid var(--accent-color);
+            border-radius: 4px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            color: var(--accent-color);
+            font-family: 'Silkscreen', sans-serif;
+            font-size: 0.7rem;
+            overflow: hidden;
+        }
+
+        .bar-cover {
+            width: 36px;
+            height: 36px;
+            flex-shrink: 0;
+            border: 2px solid var(--accent-color);
+            border-radius: 3px;
+            background: #0b0f14;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .bar-cover svg { width: 18px; height: 18px; }
+
+        .bar-btn {
+            background: none;
+            border: none;
+            color: var(--accent-color);
+            cursor: pointer;
+            width: 26px;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            border-radius: 3px;
+            transition: background-color 0.15s ease;
+        }
+
+        .bar-btn:hover { background-color: var(--accent-soft); }
+
+        .bar-btn.play-btn {
+            width: 30px;
+            height: 30px;
+        }
+
+        .bar-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        .bar-btn svg.stroke {
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .bar-sep {
+            width: 1px;
+            height: 26px;
+            background: var(--accent-line);
+            flex-shrink: 0;
+        }
+
+        .marquee {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            white-space: nowrap;
+            color: var(--accent-color);
+            text-shadow: 0 0 6px rgba(132, 204, 22, 0.4);
+            -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+            mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+        }
+
+        .marquee-track {
+            display: inline-block;
+            padding-left: 100%;
+            animation: scroll-text 14s linear infinite;
+        }
+
+        @keyframes scroll-text {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100%); }
+        }
+
+        .time-display {
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+            font-size: 0.65rem;
+            flex-shrink: 0;
+        }
+
+        .volume {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .volume-slider {
+            width: 56px;
+            height: 3px;
+            background: var(--accent-line);
+            position: relative;
+            border-radius: 2px;
+        }
+
+        .volume-slider::after {
+            content: "";
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translate(50%, -50%);
+            width: 8px;
+            height: 8px;
+            background: var(--accent-color);
+            border-radius: 50%;
+        }
+
+        .bar-right {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 720px) {
+            .bar { gap: 6px; padding: 0 8px; }
+            .bar-hide-sm { display: none; }
+        }
+
+        @media (max-width: 860px) {
+            .hero { padding: 3rem 0 2rem; }
+        }
+
+        /* ---------- Sections ---------- */
+        section.block {
+            padding: 4rem 0;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .section-head {
+            margin-bottom: 2.25rem;
+            max-width: 560px;
+        }
+
+        .eyebrow {
+            font-family: 'Silkscreen', sans-serif;
+            font-size: 0.7rem;
+            color: var(--accent-color);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 0.6rem;
+            display: block;
+        }
+
+        .section-head h2 {
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            line-height: 1.2;
+            letter-spacing: -0.01em;
+            margin-bottom: 0.6rem;
+        }
+
+        .section-head p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* ---------- Features ---------- */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        @media (max-width: 860px) {
+            .features-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        @media (max-width: 560px) {
+            .features-grid { grid-template-columns: 1fr; }
+        }
+
+        .feature-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            transition: border-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .feature-card:hover {
+            border-color: var(--accent-line);
+            transform: translateY(-2px);
+        }
+
+        .icon-box {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            background: var(--accent-soft);
+            border: 1px solid var(--accent-line);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        .icon-box svg {
+            width: 18px;
+            height: 18px;
+            color: var(--accent-color);
+        }
+
+        .feature-card h3 {
+            font-size: 0.98rem;
+            margin-bottom: 0.4rem;
+        }
+
+        .feature-card p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* ---------- Languages ---------- */
+        .lang-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+        }
+
+        .lang-chip {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.55rem 1rem;
+            border-radius: 999px;
+            font-family: Arial, sans-serif;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+        }
+
+        .lang-chip:hover {
+            border-color: var(--accent-line);
+            color: var(--accent-color);
+        }
+
+        .lang-chip.active {
+            background: var(--accent-soft);
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .lang-chip b {
+            color: var(--accent-color);
+            font-family: 'Silkscreen', sans-serif;
+            font-weight: 400;
+            font-size: 0.7rem;
+            margin-right: 6px;
+        }
+
+        /* ---------- Download ---------- */
+        .download-card {
+            background: linear-gradient(135deg, rgba(132, 204, 22, 0.08), transparent 60%), var(--card-bg);
+            border: 1px solid var(--accent-line);
+            border-radius: 10px;
+            padding: 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .download-card h2 {
+            font-size: clamp(1.4rem, 3vw, 1.8rem);
+            margin-bottom: 0.4rem;
+        }
+
+        .download-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            max-width: 420px;
+        }
+
+        .download-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            align-items: stretch;
+            min-width: 220px;
+        }
+
+        .download-actions .btn-primary,
+        .download-actions .btn-ghost {
+            justify-content: center;
+        }
+
+        .download-note {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        /* ---------- Footer ---------- */
+        footer {
+            position: relative;
+            z-index: 1;
+            border-top: 1px solid var(--border-color);
+            padding: 1.5rem 0;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        footer .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        footer a {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        footer a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <!-- Splash -->
+    <div id="splash-screen">
+        <h1>IGUANA</h1>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <div class="container nav">
+            <a href="#" class="brand">
+                <img src="Michael.png" alt="Logo de Iguana">
+            </a>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero -->
+        <section class="container hero">
+            <h1 data-i18n-html="hero_title">Tu música, sin distracciones y <span>a tu ritmo</span>.</h1>
+            <p class="lead" data-i18n="hero_lead">Un reproductor ultraligero con diseño flotante sin bordes, navegación por scroll y ecualizador gráfico. Siempre a la vista, nunca en tu camino.</p>
+
+            <!-- Reproductor real (barra) -->
+            <div class="player-wrap">
+                <div class="bar" role="region" aria-label="Reproductor">
+                    <div class="bar-cover" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/></svg>
+                    </div>
+
+                    <button class="bar-btn" aria-label="Abrir archivo">
+                        <svg viewBox="0 0 24 24"><path d="M12 4 4 13h16z"/><rect x="4" y="16" width="16" height="3"/></svg>
+                    </button>
+
+                    <button class="bar-btn" aria-label="Anterior">
+                        <svg viewBox="0 0 24 24"><path d="M11 6 3 12l8 6zM20 6l-8 6 8 6z"/></svg>
+                    </button>
+
+                    <button class="bar-btn play-btn" aria-label="Reproducir">
+                        <svg viewBox="0 0 24 24"><path d="M7 4v16l13-8z"/></svg>
+                    </button>
+
+                    <button class="bar-btn" aria-label="Siguiente">
+                        <svg viewBox="0 0 24 24"><path d="M13 6l8 6-8 6zM4 6l8 6-8 6z"/></svg>
+                    </button>
+
+                    <button class="bar-btn bar-hide-sm" aria-label="Aleatorio">
+                        <svg class="stroke" viewBox="0 0 24 24"><path d="M3 7h3c4 0 5 10 9 10h3M3 17h3c2 0 3-2 4-4M14 7c-1 2-2 4-3 5M17 4l3 3-3 3M17 14l3 3-3 3"/></svg>
+                    </button>
+
+                    <button class="bar-btn bar-hide-sm" aria-label="Repetir">
+                        <svg class="stroke" viewBox="0 0 24 24"><path d="M4 11V9a3 3 0 0 1 3-3h11M17 3l3 3-3 3M20 13v2a3 3 0 0 1-3 3H6M7 21l-3-3 3-3"/></svg>
+                    </button>
+
+                    <button class="bar-btn bar-hide-sm" aria-label="Lista de reproducción">
+                        <svg class="stroke" viewBox="0 0 24 24"><path d="M4 6h12M4 12h12M4 18h8M18 15v6M21 18h-6"/></svg>
+                    </button>
+
+                    <div class="bar-sep bar-hide-sm"></div>
+
+                    <div class="marquee" aria-live="polite">
+                        <div class="marquee-track">a disfrutar &nbsp;•&nbsp; ¡Te damos la bienvenida! Carga tus canciones para comenzar &nbsp;•&nbsp; </div>
+                    </div>
+
+                    <div class="time-display">00:00 / 00:00</div>
+
+                    <div class="volume bar-hide-sm" aria-label="Volumen">
+                        <svg class="bar-btn" viewBox="0 0 24 24" style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg>
+                        <div class="volume-slider"></div>
+                    </div>
+
+                    <div class="bar-right">
+                        <button class="bar-btn" aria-label="Ayuda">
+                            <svg class="stroke" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.5"/></svg>
+                        </button>
+                        <button class="bar-btn bar-hide-sm" aria-label="Idioma">
+                            <svg class="stroke" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg>
+                        </button>
+                        <button class="bar-btn" aria-label="Cerrar">
+                            <svg class="stroke" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hero-meta">
+                <span data-i18n="meta_open">Código abierto</span>
+                <span data-i18n="meta_borderless">Sin bordes</span>
+                <span data-i18n="meta_light">Ligero</span>
+            </div>
+        </section>
+
+        <!-- Características -->
+        <section class="container block" id="features">
+            <div class="section-head">
+                <span class="eyebrow" data-i18n="feat_eyebrow">Características</span>
+                <h2 data-i18n="feat_title">Todo lo necesario, nada que estorbe.</h2>
+                <p data-i18n="feat_lead">Iguana está pensado para convivir con tu escritorio sin robarte atención.</p>
+            </div>
+
+            <div class="features-grid">
+                <article class="feature-card">
+                    <div class="icon-box">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M10 4v4"/><path d="M2 8h20"/><path d="M6 4h2"/></svg>
+                    </div>
+                    <h3 data-i18n="f1_title">Diseño flotante</h3>
+                    <p data-i18n="f1_text">Una barra compacta y elegante, siempre visible por encima de tus ventanas.</p>
+                </article>
+
+                <article class="feature-card">
+                    <div class="icon-box">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4.1L12 6"/><path d="M5.1 8l2.9-.8"/><path d="M6 13l-1.9 2"/><path d="M20 12h-3"/><path d="M16 19l-2-2"/><path d="M12 2v3"/><path d="M18.8 6.2l-2.1 2.1"/><path d="m12 12 4 4"/><circle cx="12" cy="12" r="2"/></svg>
+                    </div>
+                    <h3 data-i18n="f2_title">Scroll inteligente</h3>
+                    <p data-i18n="f2_text">Navega la lista con la rueda del ratón y haz clic para reproducir.</p>
+                </article>
+
+                <article class="feature-card">
+                    <div class="icon-box">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+                    </div>
+                    <h3 data-i18n="f3_title">Ecualizador gráfico</h3>
+                    <p data-i18n="f3_text">Ajusta el sonido con facilidad, banda por banda, y escúchalo al instante.</p>
+                </article>
+            </div>
+        </section>
+
+        <!-- Idiomas -->
+        <section class="container block" id="languages">
+            <div class="section-head">
+                <span class="eyebrow" data-i18n="lang_eyebrow">Idiomas</span>
+                <h2 data-i18n="lang_title">Tu idioma, desde el primer inicio.</h2>
+                <p data-i18n="lang_lead">Haz clic en un idioma para traducir esta página.</p>
+            </div>
+            <div class="lang-row" role="group" aria-label="Seleccionar idioma">
+                <button type="button" class="lang-chip active" data-lang="es"><b>ES</b>Español</button>
+                <button type="button" class="lang-chip" data-lang="en"><b>EN</b>English</button>
+                <button type="button" class="lang-chip" data-lang="fr"><b>FR</b>Français</button>
+                <button type="button" class="lang-chip" data-lang="pt"><b>PT</b>Português</button>
+            </div>
+        </section>
+
+        <!-- Descarga -->
+        <section class="container block" id="download">
+            <div class="download-card">
+                <div>
+                    <span class="eyebrow" data-i18n="dl_eyebrow">Descarga</span>
+                    <h2 data-i18n="dl_title">Empieza a escuchar en segundos.</h2>
+                    <p data-i18n="dl_text">Gratis y de código abierto. Descárgalo, ábrelo y tu música ya está lista.</p>
+                </div>
+                <div class="download-actions">
+                    <a href="https://github.com/coffeetron832/Iguana/releases" target="_blank" rel="noopener" class="btn-primary" data-i18n="dl_btn">Descargar para escritorio</a>
+                    <a href="https://github.com/coffeetron832/Iguana" target="_blank" rel="noopener" class="btn-ghost" data-i18n="dl_source">Código fuente</a>
+                    <span class="download-note" data-i18n="dl_note">Última versión disponible en GitHub</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <span><a href="https://github.com/coffeetron832/Iguana" target="_blank" rel="noopener" data-i18n="foot_open">Proyecto de código abierto</a></span>
+            <span><span data-i18n="foot_made">Hecho por</span> <a href="https://www.instagram.com/ponton.0/" target="_blank" rel="noopener">jahp</a></span>
+        </div>
+    </footer>
+
+    <script>
+        /* ---------- Traducciones ---------- */
+        const translations = {
+            es: {
+                hero_title: 'Tu música, sin distracciones y <span>a tu ritmo</span>.',
+                hero_lead: "Un reproductor ultraligero con diseño flotante sin bordes, navegación por scroll y ecualizador gráfico. Siempre a la vista, nunca en tu camino.",
+                meta_open: "Código abierto",
+                meta_borderless: "Sin bordes",
+                meta_light: "Ligero",
+                feat_eyebrow: "Características",
+                feat_title: "Todo lo necesario, nada que estorbe.",
+                feat_lead: "Iguana está pensado para convivir con tu escritorio sin robarte atención.",
+                f1_title: "Diseño flotante",
+                f1_text: "Una barra compacta y elegante, siempre visible por encima de tus ventanas.",
+                f2_title: "Scroll inteligente",
+                f2_text: "Navega la lista con la rueda del ratón y haz clic para reproducir.",
+                f3_title: "Ecualizador gráfico",
+                f3_text: "Ajusta el sonido con facilidad, banda por banda, y escúchalo al instante.",
+                lang_eyebrow: "Idiomas",
+                lang_title: "Tu idioma, desde el primer inicio.",
+                lang_lead: "Haz clic en un idioma para traducir esta página.",
+                dl_eyebrow: "Descarga",
+                dl_title: "Empieza a escuchar en segundos.",
+                dl_text: "Gratis y de código abierto. Descárgalo, ábrelo y tu música ya está lista.",
+                dl_btn: "Descargar para escritorio",
+                dl_source: "Código fuente",
+                dl_note: "Última versión disponible en GitHub",
+                foot_open: "Proyecto de código abierto",
+                foot_made: "Hecho por"
+            },
+            en: {
+                hero_title: 'Your music, distraction-free and <span>at your pace</span>.',
+                hero_lead: "An ultralight player with a borderless floating design, scroll navigation and a graphic equalizer. Always in sight, never in your way.",
+                meta_open: "Open source",
+                meta_borderless: "Borderless",
+                meta_light: "Lightweight",
+                feat_eyebrow: "Features",
+                feat_title: "Everything you need, nothing in the way.",
+                feat_lead: "Iguana is designed to live on your desktop without stealing your attention.",
+                f1_title: "Floating design",
+                f1_text: "A compact, elegant bar, always visible above your windows.",
+                f2_title: "Smart scroll",
+                f2_text: "Browse the list with your mouse wheel and click to play.",
+                f3_title: "Graphic equalizer",
+                f3_text: "Adjust the sound easily, band by band, and hear it instantly.",
+                lang_eyebrow: "Languages",
+                lang_title: "Your language, from the first launch.",
+                lang_lead: "Click a language to translate this page.",
+                dl_eyebrow: "Download",
+                dl_title: "Start listening in seconds.",
+                dl_text: "Free and open source. Download it, open it and your music is ready.",
+                dl_btn: "Download for desktop",
+                dl_source: "Source code",
+                dl_note: "Latest version available on GitHub",
+                foot_open: "Open source project",
+                foot_made: "Made by"
+            },
+            fr: {
+                hero_title: 'Votre musique, sans distractions et <span>à votre rythme</span>.',
+                hero_lead: "Un lecteur ultraléger au design flottant sans bordures, navigation au défilement et égaliseur graphique. Toujours visible, jamais gênant.",
+                meta_open: "Open source",
+                meta_borderless: "Sans bordures",
+                meta_light: "Léger",
+                feat_eyebrow: "Fonctionnalités",
+                feat_title: "Tout ce qu'il faut, rien qui gêne.",
+                feat_lead: "Iguana est conçu pour vivre sur votre bureau sans vous voler votre attention.",
+                f1_title: "Design flottant",
+                f1_text: "Une barre compacte et élégante, toujours visible au-dessus de vos fenêtres.",
+                f2_title: "Défilement intelligent",
+                f2_text: "Parcourez la liste avec la molette et cliquez pour lire.",
+                f3_title: "Égaliseur graphique",
+                f3_text: "Réglez le son facilement, bande par bande, et écoutez-le instantanément.",
+                lang_eyebrow: "Langues",
+                lang_title: "Votre langue, dès le premier lancement.",
+                lang_lead: "Cliquez sur une langue pour traduire cette page.",
+                dl_eyebrow: "Téléchargement",
+                dl_title: "Commencez à écouter en quelques secondes.",
+                dl_text: "Gratuit et open source. Téléchargez-le, ouvrez-le et votre musique est prête.",
+                dl_btn: "Télécharger pour ordinateur",
+                dl_source: "Code source",
+                dl_note: "Dernière version disponible sur GitHub",
+                foot_open: "Projet open source",
+                foot_made: "Créé par"
+            },
+            pt: {
+                hero_title: 'Sua música, sem distrações e <span>no seu ritmo</span>.',
+                hero_lead: "Um player ultraleve com design flutuante sem bordas, navegação por rolagem e equalizador gráfico. Sempre à vista, nunca no seu caminho.",
+                meta_open: "Código aberto",
+                meta_borderless: "Sem bordas",
+                meta_light: "Leve",
+                feat_eyebrow: "Recursos",
+                feat_title: "Tudo o que você precisa, nada que atrapalhe.",
+                feat_lead: "O Iguana foi pensado para ficar no seu desktop sem roubar sua atenção.",
+                f1_title: "Design flutuante",
+                f1_text: "Uma barra compacta e elegante, sempre visível acima das suas janelas.",
+                f2_title: "Rolagem inteligente",
+                f2_text: "Navegue pela lista com a roda do mouse e clique para tocar.",
+                f3_title: "Equalizador gráfico",
+                f3_text: "Ajuste o som com facilidade, faixa por faixa, e ouça na hora.",
+                lang_eyebrow: "Idiomas",
+                lang_title: "Seu idioma, desde o primeiro início.",
+                lang_lead: "Clique em um idioma para traduzir esta página.",
+                dl_eyebrow: "Download",
+                dl_title: "Comece a ouvir em segundos.",
+                dl_text: "Gratuito e de código aberto. Baixe, abra e sua música já está pronta.",
+                dl_btn: "Baixar para desktop",
+                dl_source: "Código-fonte",
+                dl_note: "Última versão disponível no GitHub",
+                foot_open: "Projeto de código aberto",
+                foot_made: "Feito por"
+            }
+        };
+
+        /* ---------- Idiomas ---------- */
+        function applyLanguage(lang) {
+            const dict = translations[lang];
+            if (!dict) return;
+
+            document.documentElement.lang = lang;
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.dataset.i18n;
+                if (dict[key] !== undefined) el.textContent = dict[key];
+            });
+
+            document.querySelectorAll('[data-i18n-html]').forEach(el => {
+                const key = el.dataset.i18nHtml;
+                if (dict[key] !== undefined) el.innerHTML = dict[key];
+            });
+
+            document.querySelectorAll('.lang-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.lang === lang);
+            });
+
+            try { localStorage.setItem('iguana-lang', lang); } catch (e) {}
+        }
+
+        document.querySelectorAll('.lang-chip').forEach(btn => {
+            btn.addEventListener('click', () => applyLanguage(btn.dataset.lang));
+        });
+
+        try {
+            const saved = localStorage.getItem('iguana-lang');
+            if (saved && translations[saved]) applyLanguage(saved);
+        } catch (e) {}
+
+        /* ---------- Resplandor que sigue al cursor ---------- */
+        const root = document.documentElement;
+        let targetX = window.innerWidth / 2;
+        let targetY = -100;
+        let currentX = targetX;
+        let currentY = targetY;
+
+        window.addEventListener('pointermove', e => {
+            targetX = e.clientX;
+            targetY = e.clientY;
+        });
+
+        function animateGlow() {
+            currentX += (targetX - currentX) * 0.08;
+            currentY += (targetY - currentY) * 0.08;
+            root.style.setProperty('--mx', currentX + 'px');
+            root.style.setProperty('--my', currentY + 'px');
+            requestAnimationFrame(animateGlow);
+        }
+        animateGlow();
+
+        /* ---------- Splash ---------- */
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('splash-screen').classList.add('fade-out');
+            }, 1200);
+        });
+    </script>
+</body>
+</html>
