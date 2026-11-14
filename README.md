@@ -4,7 +4,7 @@
 
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Version](https://img.shields.io/badge/version-1.0.0-green)
 
 
 ### Iguana Music Player is a lightweight, minimalist music player designed to provide a smooth audio experience on Linux systems.
